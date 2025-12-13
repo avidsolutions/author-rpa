@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Workflow - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Workflow Module</h2>
+    <p>Create and execute multi-step automations</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Workflow Builder</h3>
+        <button class="btn btn-secondary" onclick="addStep()">+ Add Step</button>
+    </div>
+
+    <div id="steps-container"></div>
+
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="runWorkflow()">Run Workflow</button>
+        <button class="btn btn-secondary" onclick="clearSteps()">Clear All</button>
+    </div>
+</div>
+
+<div class="card" id="results-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Workflow Results</h3>
+        <span id="workflow-status"></span>
+    </div>
+    <div id="workflow-results" class="results"></div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Example Workflows</h3>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <button class="btn btn-secondary" onclick="loadExample('scrape-api')">Scrape + API</button>
+        <button class="btn btn-secondary" onclick="loadExample('multi-scrape')">Multi-Page Scrape</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Python Workflow Example</h3>
+    </div>
+    <pre style="background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow-x: auto;">
+<code>from rpa import RPA
+
+bot = RPA()
+
+# Create a workflow
+workflow = bot.workflow("Daily Report")
+
+# Add steps
+workflow.add_step("Fetch data", bot.api.get, "/data")
+workflow.add_step("Process", process_data, retry_count=3)
+workflow.add_step("Generate PDF", bot.pdf.create_from_text, text, "report.pdf")
+workflow.add_step("Send email", bot.email.send,
+    to="team@company.com",
+    subject="Daily Report",
+    attachments=["report.pdf"]
+)
+
+# Run the workflow
+result = workflow.run()
+print(f"Status: {result['status']}")</code></pre>
+</div>
+
+<template id="step-template">
+    <div class="step-item" style="background: #f8fafc; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <strong>Step <span class="step-number"></span></strong>
+            <button class="btn btn-danger" style="padding: 5px 10px;" onclick="removeStep(this)">Remove</button>
+        </div>
+        <div class="grid grid-2">
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label">Type</label>
+                <select class="form-select step-type" onchange="updateStepParams(this)">
+                    <option value="scrape">Web Scrape</option>
+                    <option value="api">API Request</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label class="form-label">URL</label>
+                <input type="text" class="form-input step-url" placeholder="https://example.com">
+            </div>
+        </div>
+        <div class="step-extra-params"></div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let stepCount = 0;
+
+    function addStep() {
+        stepCount++;
+        const template = document.getElementById('step-template');
+        const clone = template.content.cloneNode(true);
+
+        clone.querySelector('.step-number').textContent = stepCount;
+
+        document.getElementById('steps-container').appendChild(clone);
+        updateStepNumbers();
+    }
+
+    function removeStep(btn) {
+        btn.closest('.step-item').remove();
+        updateStepNumbers();
+    }
+
+    function updateStepNumbers() {
+        const steps = document.querySelectorAll('.step-item');
+        steps.forEach((step, i) => {
+            step.querySelector('.step-number').textContent = i + 1;
+        });
+        stepCount = steps.length;
+    }
+
+    function updateStepParams(select) {
+        const step = select.closest('.step-item');
+        const paramsDiv = step.querySelector('.step-extra-params');
+        const type = select.value;
+
+        if (type === 'scrape') {
+            paramsDiv.innerHTML = `
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">CSS Selector (optional)</label>
+                    <input type="text" class="form-input step-selector" placeholder="article, .content">
+                </div>
+            `;
+        } else if (type === 'api') {
+            paramsDiv.innerHTML = `
+                <div class="grid grid-2">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Method</label>
+                        <select class="form-select step-method">
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Body (JSON, for POST)</label>
+                        <input type="text" class="form-input step-body" placeholder='{"key": "value"}'>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function clearSteps() {
+        document.getElementById('steps-container').innerHTML = '';
+        stepCount = 0;
+    }
+
+    async function runWorkflow() {
+        const stepElements = document.querySelectorAll('.step-item');
+        if (stepElements.length === 0) {
+            alert('Add at least one step');
+            return;
+        }
+
+        const steps = [];
+        stepElements.forEach(step => {
+            const type = step.querySelector('.step-type').value;
+            const url = step.querySelector('.step-url').value;
+
+            const params = { url };
+
+            if (type === 'scrape') {
+                const selector = step.querySelector('.step-selector')?.value;
+                if (selector) params.selector = selector;
+            } else if (type === 'api') {
+                params.method = step.querySelector('.step-method')?.value || 'GET';
+                const body = step.querySelector('.step-body')?.value;
+                if (body) {
+                    try {
+                        params.body = JSON.parse(body);
+                    } catch (e) {}
+                }
+            }
+
+            steps.push({ type, params });
+        });
+
+        const resultsCard = document.getElementById('results-card');
+        const resultsDiv = document.getElementById('workflow-results');
+        const statusSpan = document.getElementById('workflow-status');
+
+        resultsDiv.innerHTML = '<div class="loading active"><div class="spinner"></div> Running workflow...</div>';
+        resultsCard.style.display = 'block';
+
+        try {
+            const response = await fetch('/api/workflow/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steps }),
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                statusSpan.innerHTML = '<span style="color: var(--danger);">Error</span>';
+                resultsDiv.innerHTML = `<pre style="color: var(--danger);">${escapeHtml(data.error)}</pre>`;
+            } else {
+                const status = data.result?.status || 'Unknown';
+                statusSpan.innerHTML = status === 'COMPLETED'
+                    ? '<span style="color: var(--success);">Completed</span>'
+                    : '<span style="color: var(--danger);">Failed</span>';
+                resultsDiv.innerHTML = `<pre>${escapeHtml(JSON.stringify(data.result, null, 2))}</pre>`;
+            }
+        } catch (err) {
+            statusSpan.innerHTML = '<span style="color: var(--danger);">Error</span>';
+            resultsDiv.innerHTML = `<pre style="color: var(--danger);">${escapeHtml(err.message)}</pre>`;
+        }
+    }
+
+    function loadExample(type) {
+        clearSteps();
+
+        if (type === 'scrape-api') {
+            addStep();
+            document.querySelector('.step-type').value = 'scrape';
+            document.querySelector('.step-url').value = 'https://example.com';
+            updateStepParams(document.querySelector('.step-type'));
+
+            addStep();
+            document.querySelectorAll('.step-type')[1].value = 'api';
+            document.querySelectorAll('.step-url')[1].value = 'https://jsonplaceholder.typicode.com/posts/1';
+            updateStepParams(document.querySelectorAll('.step-type')[1]);
+        } else if (type === 'multi-scrape') {
+            addStep();
+            document.querySelector('.step-url').value = 'https://example.com';
+
+            addStep();
+            document.querySelectorAll('.step-url')[1].value = 'https://www.wikipedia.org';
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Add initial step
+    addStep();
+</script>
+{% endblock %}

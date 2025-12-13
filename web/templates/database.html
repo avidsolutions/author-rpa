@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Database - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Database Module</h2>
+    <p>Connect to SQLite, PostgreSQL, or MySQL databases</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Database Connection</h3>
+    </div>
+    <form id="connect-form">
+        <div class="form-group">
+            <label class="form-label">Connection String</label>
+            <input type="text" class="form-input" id="connection-string" placeholder="sqlite:///data.db or postgresql://user:pass@localhost/dbname">
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+            <button type="button" class="btn btn-secondary" onclick="setConnection('sqlite')">SQLite</button>
+            <button type="button" class="btn btn-secondary" onclick="setConnection('postgres')">PostgreSQL</button>
+            <button type="button" class="btn btn-secondary" onclick="setConnection('mysql')">MySQL</button>
+        </div>
+        <button type="submit" class="btn btn-primary">Connect</button>
+    </form>
+    <div id="connect-result"></div>
+</div>
+
+<div class="card" id="tables-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Tables</h3>
+    </div>
+    <div id="tables-list"></div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">SQL Query</h3>
+    </div>
+    <form id="query-form">
+        <div class="form-group">
+            <label class="form-label">SQL Statement</label>
+            <textarea class="form-textarea" id="sql-query" placeholder="SELECT * FROM users LIMIT 10"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Execute Query</button>
+    </form>
+</div>
+
+<div class="card" id="results-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Query Results</h3>
+        <span id="row-count"></span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" id="results-table">
+            <thead id="results-head"></thead>
+            <tbody id="results-body"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setConnection(type) {
+        const input = document.getElementById('connection-string');
+        if (type === 'sqlite') {
+            input.value = 'sqlite:///data.db';
+        } else if (type === 'postgres') {
+            input.value = 'postgresql://user:password@localhost:5432/database';
+        } else if (type === 'mysql') {
+            input.value = 'mysql://user:password@localhost:3306/database';
+        }
+    }
+
+    document.getElementById('connect-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const connectionString = document.getElementById('connection-string').value;
+
+        if (!connectionString) {
+            alert('Enter a connection string');
+            return;
+        }
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/database/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ connection_string: connectionString }),
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                showAlert(document.getElementById('connect-result'), 'error', data.error);
+                document.getElementById('tables-card').style.display = 'none';
+            } else {
+                showAlert(document.getElementById('connect-result'), 'success', 'Connected successfully');
+                displayTables(data.tables);
+            }
+        } catch (err) {
+            showAlert(document.getElementById('connect-result'), 'error', err.message);
+        }
+
+        hideLoading(btn, 'Connect');
+    });
+
+    document.getElementById('query-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = document.getElementById('sql-query').value;
+
+        if (!query) {
+            alert('Enter a SQL query');
+            return;
+        }
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/database/query', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query }),
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                showAlert(document.getElementById('results-card'), 'error', data.error);
+                document.getElementById('results-card').style.display = 'block';
+            } else {
+                displayResults(data.results);
+            }
+        } catch (err) {
+            showAlert(document.getElementById('results-card'), 'error', err.message);
+            document.getElementById('results-card').style.display = 'block';
+        }
+
+        hideLoading(btn, 'Execute Query');
+    });
+
+    function displayTables(tables) {
+        const card = document.getElementById('tables-card');
+        const list = document.getElementById('tables-list');
+
+        if (tables.length === 0) {
+            list.innerHTML = '<p style="color: var(--text-light);">No tables found</p>';
+        } else {
+            list.innerHTML = tables.map(table =>
+                `<button class="btn btn-secondary" style="margin: 5px;" onclick="queryTable('${table}')">${table}</button>`
+            ).join('');
+        }
+
+        card.style.display = 'block';
+    }
+
+    function queryTable(table) {
+        document.getElementById('sql-query').value = `SELECT * FROM ${table} LIMIT 100`;
+    }
+
+    function displayResults(results) {
+        const card = document.getElementById('results-card');
+        const head = document.getElementById('results-head');
+        const body = document.getElementById('results-body');
+        const count = document.getElementById('row-count');
+
+        if (!results || results.length === 0) {
+            head.innerHTML = '';
+            body.innerHTML = '<tr><td>No results</td></tr>';
+            count.textContent = '0 rows';
+        } else {
+            const columns = Object.keys(results[0]);
+            head.innerHTML = '<tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr>';
+            body.innerHTML = results.map(row =>
+                '<tr>' + columns.map(col => `<td>${row[col] ?? ''}</td>`).join('') + '</tr>'
+            ).join('');
+            count.textContent = `${results.length} rows`;
+        }
+
+        card.style.display = 'block';
+    }
+</script>
+{% endblock %}

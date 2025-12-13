@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}PDF - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>PDF Module</h2>
+    <p>Extract text, merge, split, and create PDF documents</p>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Extract Text from PDF</h3>
+        </div>
+        <form id="extract-form">
+            <div class="file-upload" onclick="document.getElementById('extract-input').click()">
+                <div class="file-upload-icon">📄</div>
+                <p id="extract-filename">Click to upload PDF</p>
+                <input type="file" id="extract-input" accept=".pdf">
+            </div>
+            <div style="margin-top: 15px;">
+                <button type="submit" class="btn btn-primary">Extract Text</button>
+            </div>
+        </form>
+        <div id="extract-result" class="results" style="display: none;"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Create PDF from Text</h3>
+        </div>
+        <form id="create-form">
+            <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input" id="create-title" placeholder="Document Title">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Content</label>
+                <textarea class="form-textarea" id="create-content" placeholder="Enter your text here..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Create PDF</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Merge PDFs</h3>
+    </div>
+    <form id="merge-form">
+        <div class="file-upload" onclick="document.getElementById('merge-input').click()">
+            <div class="file-upload-icon">📎</div>
+            <p id="merge-filenames">Click to upload multiple PDFs</p>
+            <p style="font-size: 0.8rem; color: var(--text-light);">Select 2 or more PDF files</p>
+            <input type="file" id="merge-input" accept=".pdf" multiple>
+        </div>
+        <div style="margin-top: 15px;">
+            <button type="submit" class="btn btn-primary">Merge PDFs</button>
+        </div>
+    </form>
+</div>
+
+<div class="card" id="info-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">PDF Information</h3>
+    </div>
+    <div id="pdf-info"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Extract form
+    document.getElementById('extract-input').addEventListener('change', (e) => {
+        const name = e.target.files[0]?.name;
+        if (name) document.getElementById('extract-filename').textContent = name;
+    });
+
+    document.getElementById('extract-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('extract-input').files[0];
+        if (!file) { alert('Please select a PDF'); return; }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/pdf/extract', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            const resultDiv = document.getElementById('extract-result');
+            resultDiv.style.display = 'block';
+
+            if (data.error) {
+                showAlert(resultDiv, 'error', data.error);
+            } else {
+                resultDiv.innerHTML = `<pre>${data.text}</pre>`;
+
+                // Show PDF info
+                const infoCard = document.getElementById('info-card');
+                infoCard.style.display = 'block';
+                document.getElementById('pdf-info').innerHTML = `
+                    <table class="table">
+                        <tr><td><strong>Pages</strong></td><td>${data.info.pages}</td></tr>
+                        <tr><td><strong>Title</strong></td><td>${data.info.title || '-'}</td></tr>
+                        <tr><td><strong>Author</strong></td><td>${data.info.author || '-'}</td></tr>
+                        <tr><td><strong>Encrypted</strong></td><td>${data.info.encrypted ? 'Yes' : 'No'}</td></tr>
+                    </table>
+                `;
+            }
+        } catch (err) {
+            showAlert(document.getElementById('extract-result'), 'error', err.message);
+            document.getElementById('extract-result').style.display = 'block';
+        }
+
+        hideLoading(btn, 'Extract Text');
+    });
+
+    // Create form
+    document.getElementById('create-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('create-title').value;
+        const text = document.getElementById('create-content').value;
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/pdf/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, text }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'document.pdf';
+                a.click();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Error creating PDF');
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Create PDF');
+    });
+
+    // Merge form
+    document.getElementById('merge-input').addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files.length > 0) {
+            document.getElementById('merge-filenames').textContent =
+                Array.from(files).map(f => f.name).join(', ');
+        }
+    });
+
+    document.getElementById('merge-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const files = document.getElementById('merge-input').files;
+        if (files.length < 2) { alert('Select at least 2 PDFs'); return; }
+
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('files', file);
+        }
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/pdf/merge', { method: 'POST', body: formData });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'merged.pdf';
+                a.click();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Error merging PDFs');
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Merge PDFs');
+    });
+</script>
+{% endblock %}

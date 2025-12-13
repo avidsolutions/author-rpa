@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Web Scraper - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Web Scraper Module</h2>
+    <p>Extract text, links, and tables from websites</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Scrape Website</h3>
+    </div>
+    <form id="scrape-form">
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label class="form-label">URL</label>
+                <input type="url" class="form-input" id="scrape-url" placeholder="https://example.com" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">CSS Selector (optional)</label>
+                <input type="text" class="form-input" id="scrape-selector" placeholder="article, .content, #main">
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary" data-action="text">Extract Text</button>
+            <button type="button" class="btn btn-secondary" data-action="links">Extract Links</button>
+            <button type="button" class="btn btn-secondary" data-action="table">Extract Table</button>
+        </div>
+    </form>
+</div>
+
+<div class="card" id="result-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Results</h3>
+        <button class="btn btn-secondary" onclick="copyResults()">Copy</button>
+    </div>
+    <div id="results" class="results"></div>
+</div>
+
+<div class="card" id="links-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Extracted Links</h3>
+        <span id="link-count"></span>
+    </div>
+    <div id="links-list" style="max-height: 400px; overflow: auto;"></div>
+</div>
+
+<div class="card" id="table-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Extracted Table</h3>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" id="extracted-table"></table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const form = document.getElementById('scrape-form');
+    const buttons = form.querySelectorAll('button');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const action = btn.dataset.action;
+            const url = document.getElementById('scrape-url').value;
+            const selector = document.getElementById('scrape-selector').value;
+
+            if (!url) { alert('Please enter a URL'); return; }
+
+            // Hide all result cards
+            document.getElementById('result-card').style.display = 'none';
+            document.getElementById('links-card').style.display = 'none';
+            document.getElementById('table-card').style.display = 'none';
+
+            showLoading(btn);
+
+            try {
+                let endpoint, body;
+
+                if (action === 'text') {
+                    endpoint = '/api/scraper/extract-text';
+                    body = { url, selector: selector || null };
+                } else if (action === 'links') {
+                    endpoint = '/api/scraper/extract-links';
+                    body = { url };
+                } else if (action === 'table') {
+                    endpoint = '/api/scraper/extract-table';
+                    body = { url };
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    showAlert(document.getElementById('results'), 'error', data.error);
+                    document.getElementById('result-card').style.display = 'block';
+                } else if (action === 'text') {
+                    document.getElementById('results').innerHTML = `<pre>${escapeHtml(data.text)}</pre>`;
+                    document.getElementById('result-card').style.display = 'block';
+                } else if (action === 'links') {
+                    displayLinks(data.links);
+                } else if (action === 'table') {
+                    displayTable(data.table);
+                }
+            } catch (err) {
+                showAlert(document.getElementById('results'), 'error', err.message);
+                document.getElementById('result-card').style.display = 'block';
+            }
+
+            hideLoading(btn, btn.textContent.replace('Loading...', '').trim() || action);
+        });
+    });
+
+    function displayLinks(links) {
+        const card = document.getElementById('links-card');
+        const list = document.getElementById('links-list');
+        const count = document.getElementById('link-count');
+
+        count.textContent = `${links.length} links found`;
+        list.innerHTML = links.map(link =>
+            `<div style="padding: 8px; border-bottom: 1px solid var(--border);">
+                <a href="${escapeHtml(link)}" target="_blank" style="word-break: break-all;">${escapeHtml(link)}</a>
+            </div>`
+        ).join('');
+
+        card.style.display = 'block';
+    }
+
+    function displayTable(tableData) {
+        const card = document.getElementById('table-card');
+        const table = document.getElementById('extracted-table');
+
+        if (!tableData || tableData.length === 0) {
+            table.innerHTML = '<tr><td>No table found</td></tr>';
+        } else {
+            table.innerHTML = tableData.map((row, i) =>
+                `<tr>${row.map(cell =>
+                    i === 0 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`
+                ).join('')}</tr>`
+            ).join('');
+        }
+
+        card.style.display = 'block';
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function copyResults() {
+        const text = document.getElementById('results').textContent;
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard');
+    }
+</script>
+{% endblock %}

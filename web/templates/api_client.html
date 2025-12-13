@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}API Client - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>API Client Module</h2>
+    <p>Make REST API requests (GET, POST, PUT, DELETE)</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">API Request</h3>
+    </div>
+    <form id="api-form">
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label class="form-label">Method</label>
+                <select class="form-select" id="api-method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">URL</label>
+                <input type="url" class="form-input" id="api-url" placeholder="https://api.example.com/endpoint" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Headers (JSON)</label>
+            <textarea class="form-textarea" id="api-headers" style="min-height: 80px;" placeholder='{"Authorization": "Bearer token"}'>{}</textarea>
+        </div>
+        <div class="form-group" id="body-group">
+            <label class="form-label">Body (JSON)</label>
+            <textarea class="form-textarea" id="api-body" placeholder='{"key": "value"}'></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Send Request</button>
+    </form>
+</div>
+
+<div class="card" id="response-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Response</h3>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="response-status"></span>
+            <button class="btn btn-secondary" onclick="copyResponse()">Copy</button>
+        </div>
+    </div>
+    <div id="response" class="results"></div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Quick Examples</h3>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <button class="btn btn-secondary" onclick="loadExample('users')">JSONPlaceholder Users</button>
+        <button class="btn btn-secondary" onclick="loadExample('posts')">JSONPlaceholder Posts</button>
+        <button class="btn btn-secondary" onclick="loadExample('github')">GitHub API</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const methodSelect = document.getElementById('api-method');
+    const bodyGroup = document.getElementById('body-group');
+
+    // Show/hide body based on method
+    methodSelect.addEventListener('change', () => {
+        const method = methodSelect.value;
+        bodyGroup.style.display = (method === 'GET' || method === 'DELETE') ? 'none' : 'block';
+    });
+
+    document.getElementById('api-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const method = document.getElementById('api-method').value;
+        const url = document.getElementById('api-url').value;
+        let headers = {};
+        let body = null;
+
+        try {
+            const headersStr = document.getElementById('api-headers').value;
+            if (headersStr.trim()) headers = JSON.parse(headersStr);
+        } catch (err) {
+            alert('Invalid headers JSON');
+            return;
+        }
+
+        if (method !== 'GET' && method !== 'DELETE') {
+            try {
+                const bodyStr = document.getElementById('api-body').value;
+                if (bodyStr.trim()) body = JSON.parse(bodyStr);
+            } catch (err) {
+                alert('Invalid body JSON');
+                return;
+            }
+        }
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/api-client/request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ method, url, headers, body }),
+            });
+            const data = await response.json();
+
+            const responseCard = document.getElementById('response-card');
+            const responseDiv = document.getElementById('response');
+            const statusSpan = document.getElementById('response-status');
+
+            responseCard.style.display = 'block';
+
+            if (data.error) {
+                statusSpan.innerHTML = '<span style="color: var(--danger);">Error</span>';
+                responseDiv.innerHTML = `<pre style="color: var(--danger);">${escapeHtml(data.error)}</pre>`;
+            } else {
+                statusSpan.innerHTML = '<span style="color: var(--success);">Success</span>';
+                responseDiv.innerHTML = `<pre>${escapeHtml(JSON.stringify(data.response, null, 2))}</pre>`;
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Send Request');
+    });
+
+    function loadExample(type) {
+        const urlInput = document.getElementById('api-url');
+        const methodSelect = document.getElementById('api-method');
+        const headersInput = document.getElementById('api-headers');
+
+        if (type === 'users') {
+            urlInput.value = 'https://jsonplaceholder.typicode.com/users';
+            methodSelect.value = 'GET';
+            headersInput.value = '{}';
+        } else if (type === 'posts') {
+            urlInput.value = 'https://jsonplaceholder.typicode.com/posts';
+            methodSelect.value = 'GET';
+            headersInput.value = '{}';
+        } else if (type === 'github') {
+            urlInput.value = 'https://api.github.com/users/octocat';
+            methodSelect.value = 'GET';
+            headersInput.value = '{"Accept": "application/vnd.github.v3+json"}';
+        }
+
+        methodSelect.dispatchEvent(new Event('change'));
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function copyResponse() {
+        const text = document.getElementById('response').textContent;
+        navigator.clipboard.writeText(text);
+        alert('Copied to clipboard');
+    }
+</script>
+{% endblock %}

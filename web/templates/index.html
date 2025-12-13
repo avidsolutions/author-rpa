@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Dashboard</h2>
+    <p>Welcome to the RPA Framework Control Panel</p>
+</div>
+
+<div class="grid grid-3">
+    <div class="stat-card">
+        <div class="stat-value">9</div>
+        <div class="stat-label">Available Modules</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="screen-width">-</div>
+        <div class="stat-label">Screen Width</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="screen-height">-</div>
+        <div class="stat-label">Screen Height</div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <a href="/spreadsheet" class="btn btn-primary">Process Spreadsheet</a>
+            <a href="/pdf" class="btn btn-primary">Work with PDFs</a>
+            <a href="/scraper" class="btn btn-primary">Scrape Website</a>
+            <a href="/api-client" class="btn btn-primary">API Request</a>
+            <a href="/database" class="btn btn-primary">Query Database</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">System Status</h3>
+        </div>
+        <table class="table">
+            <tr>
+                <td>RPA Framework</td>
+                <td><span style="color: var(--success);">● Running</span></td>
+            </tr>
+            <tr>
+                <td>Desktop Automation</td>
+                <td><span style="color: var(--success);">● Available</span></td>
+            </tr>
+            <tr>
+                <td>Web Server</td>
+                <td><span style="color: var(--success);">● Active</span></td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Available Modules</h3>
+    </div>
+    <div class="grid grid-3">
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">📊 Spreadsheet</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Read, write, and transform Excel/CSV files</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">📄 PDF</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Extract, merge, split, and create PDFs</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">📝 Documents</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Create Word docs, Markdown, and HTML</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">🌐 Web Scraper</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Extract data from websites</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">🔌 API Client</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Make REST API requests</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">🗄️ Database</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Query SQLite, PostgreSQL, MySQL</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">📁 Files</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Manage and organize files</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">🖥️ Desktop</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Automate mouse, keyboard, screenshots</p>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">⚙️ Workflow</h4>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Orchestrate multi-step automations</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get screen size
+    fetch('/api/desktop/screen-size')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('screen-width').textContent = data.width + 'px';
+                document.getElementById('screen-height').textContent = data.height + 'px';
+            }
+        });
+</script>
+{% endblock %}

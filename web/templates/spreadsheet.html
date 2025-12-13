@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Spreadsheet - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Spreadsheet Module</h2>
+    <p>Read, write, and transform Excel and CSV files</p>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Upload Spreadsheet</h3>
+        </div>
+        <form id="upload-form">
+            <div class="file-upload" onclick="document.getElementById('file-input').click()">
+                <div class="file-upload-icon">📊</div>
+                <p>Click to upload Excel or CSV file</p>
+                <p style="font-size: 0.8rem; color: var(--text-light);">Supports .xlsx, .xls, .csv</p>
+                <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+            </div>
+            <div style="margin-top: 15px;">
+                <button type="submit" class="btn btn-primary">Read File</button>
+            </div>
+        </form>
+        <div id="upload-result" class="results" style="display: none;"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Create Spreadsheet</h3>
+        </div>
+        <form id="create-form">
+            <div class="form-group">
+                <label class="form-label">Filename</label>
+                <input type="text" class="form-input" id="create-filename" value="output.csv" placeholder="output.csv">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data (JSON array)</label>
+                <textarea class="form-textarea" id="create-data" placeholder='[{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]'>[{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]</textarea>
+            </div>
+            <button type="submit" class="btn btn-success">Create File</button>
+        </form>
+        <div id="create-result"></div>
+    </div>
+</div>
+
+<div class="card" id="data-table-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Data Preview</h3>
+        <span id="row-count" class="btn btn-secondary" style="font-size: 0.8rem;"></span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" id="data-table">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fileInput = document.getElementById('file-input');
+    const uploadForm = document.getElementById('upload-form');
+    const createForm = document.getElementById('create-form');
+
+    fileInput.addEventListener('change', (e) => {
+        const fileName = e.target.files[0]?.name;
+        if (fileName) {
+            document.querySelector('.file-upload p').textContent = fileName;
+        }
+    });
+
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Please select a file');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/spreadsheet/read', {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                showAlert(document.getElementById('upload-result'), 'error', data.error);
+                document.getElementById('upload-result').style.display = 'block';
+            } else {
+                displayTable(data.columns, data.data);
+                document.getElementById('row-count').textContent = `${data.rows} rows`;
+            }
+        } catch (err) {
+            showAlert(document.getElementById('upload-result'), 'error', err.message);
+            document.getElementById('upload-result').style.display = 'block';
+        }
+
+        hideLoading(btn, 'Read File');
+    });
+
+    createForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const filename = document.getElementById('create-filename').value;
+        const dataStr = document.getElementById('create-data').value;
+
+        let data;
+        try {
+            data = JSON.parse(dataStr);
+        } catch (err) {
+            showAlert(document.getElementById('create-result'), 'error', 'Invalid JSON');
+            return;
+        }
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/spreadsheet/write', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, data }),
+            });
+            const result = await response.json();
+
+            if (result.error) {
+                showAlert(document.getElementById('create-result'), 'error', result.error);
+            } else {
+                showAlert(document.getElementById('create-result'), 'success', `File created: ${result.path}`);
+            }
+        } catch (err) {
+            showAlert(document.getElementById('create-result'), 'error', err.message);
+        }
+
+        hideLoading(btn, 'Create File');
+    });
+
+    function displayTable(columns, data) {
+        const card = document.getElementById('data-table-card');
+        const head = document.getElementById('table-head');
+        const body = document.getElementById('table-body');
+
+        // Header
+        head.innerHTML = '<tr>' + columns.map(col => `<th>${col}</th>`).join('') + '</tr>';
+
+        // Body (limit to 100 rows for display)
+        body.innerHTML = data.slice(0, 100).map(row =>
+            '<tr>' + columns.map(col => `<td>${row[col] ?? ''}</td>`).join('') + '</tr>'
+        ).join('');
+
+        card.style.display = 'block';
+    }
+</script>
+{% endblock %}

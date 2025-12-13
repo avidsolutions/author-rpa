@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Documents - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Documentation Module</h2>
+    <p>Create Word documents, Markdown, and HTML reports</p>
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Create Word Document</h3>
+        </div>
+        <form id="word-form">
+            <div class="form-group">
+                <label class="form-label">Document Title</label>
+                <input type="text" class="form-input" id="word-title" placeholder="My Document">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Content</label>
+                <textarea class="form-textarea" id="word-content" placeholder="Enter your document content here..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Download .docx</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Create Markdown Document</h3>
+        </div>
+        <form id="markdown-form">
+            <div class="form-group">
+                <label class="form-label">Document Title</label>
+                <input type="text" class="form-input" id="md-title" placeholder="My Document">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sections (JSON array)</label>
+                <textarea class="form-textarea" id="md-sections" placeholder='[{"heading": "Introduction", "content": "This is the intro..."}, {"heading": "Details", "content": "More details..."}]'>[{"heading": "Introduction", "content": "This is the introduction."}, {"heading": "Details", "content": "Here are some details."}]</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Download .md</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Convert Markdown to HTML</h3>
+    </div>
+    <form id="convert-form">
+        <div class="file-upload" onclick="document.getElementById('md-file').click()">
+            <div class="file-upload-icon">📝</div>
+            <p id="convert-filename">Click to upload Markdown file</p>
+            <input type="file" id="md-file" accept=".md,.markdown">
+        </div>
+        <div style="margin-top: 15px;">
+            <button type="submit" class="btn btn-success">Convert to HTML</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Word document form
+    document.getElementById('word-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('word-title').value;
+        const content = document.getElementById('word-content').value;
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/docs/create-word', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'document.docx';
+                a.click();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Error creating document');
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Download .docx');
+    });
+
+    // Markdown form
+    document.getElementById('markdown-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const title = document.getElementById('md-title').value;
+        let sections;
+
+        try {
+            sections = JSON.parse(document.getElementById('md-sections').value);
+        } catch (err) {
+            alert('Invalid JSON for sections');
+            return;
+        }
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/docs/create-markdown', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, sections }),
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'document.md';
+                a.click();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Error creating document');
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Download .md');
+    });
+
+    // Convert form
+    document.getElementById('md-file').addEventListener('change', (e) => {
+        const name = e.target.files[0]?.name;
+        if (name) document.getElementById('convert-filename').textContent = name;
+    });
+
+    document.getElementById('convert-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('md-file').files[0];
+        if (!file) {
+            alert('Please select a Markdown file');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/docs/markdown-to-html', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'document.html';
+                a.click();
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Error converting document');
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Convert to HTML');
+    });
+</script>
+{% endblock %}

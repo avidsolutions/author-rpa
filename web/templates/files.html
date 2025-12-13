@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Files - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Files Module</h2>
+    <p>Browse, read, and manage files on the system</p>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Browse Files</h3>
+    </div>
+    <form id="browse-form">
+        <div class="grid grid-2">
+            <div class="form-group">
+                <label class="form-label">Directory Path</label>
+                <input type="text" class="form-input" id="directory" value="." placeholder="/path/to/directory">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Pattern</label>
+                <input type="text" class="form-input" id="pattern" value="*" placeholder="*.txt, *.pdf, *">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">List Files</button>
+    </form>
+</div>
+
+<div class="card" id="files-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">Files</h3>
+        <span id="file-count"></span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size</th>
+                    <th>Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="files-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card" id="content-card" style="display: none;">
+    <div class="card-header">
+        <h3 class="card-title">File Content</h3>
+        <span id="content-filename"></span>
+    </div>
+    <div id="file-content" class="results"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('browse-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const directory = document.getElementById('directory').value;
+        const pattern = document.getElementById('pattern').value;
+
+        const btn = e.target.querySelector('button');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/files/list', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ directory, pattern }),
+            });
+            const data = await response.json();
+
+            if (data.error) {
+                alert(data.error);
+            } else {
+                displayFiles(data.files);
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'List Files');
+    });
+
+    function displayFiles(files) {
+        const card = document.getElementById('files-card');
+        const list = document.getElementById('files-list');
+        const count = document.getElementById('file-count');
+
+        count.textContent = `${files.length} files`;
+
+        list.innerHTML = files.map(file => `
+            <tr>
+                <td>${escapeHtml(file.name)}</td>
+                <td>${file.is_dir ? '📁 Folder' : '📄 File'}</td>
+                <td>${formatSize(file.size)}</td>
+                <td>${formatDate(file.modified)}</td>
+                <td>
+                    ${!file.is_dir ? `<button class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="readFile('${escapeHtml(file.path)}')">View</button>` : ''}
+                </td>
+            </tr>
+        `).join('');
+
+        card.style.display = 'block';
+    }
+
+    async function readFile(path) {
+        try {
+            const response = await fetch('/api/files/read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path }),
+            });
+            const data = await response.json();
+
+            const card = document.getElementById('content-card');
+            const content = document.getElementById('file-content');
+            const filename = document.getElementById('content-filename');
+
+            if (data.error) {
+                content.innerHTML = `<pre style="color: var(--danger);">${escapeHtml(data.error)}</pre>`;
+            } else {
+                content.innerHTML = `<pre>${escapeHtml(data.content)}</pre>`;
+            }
+
+            filename.textContent = path;
+            card.style.display = 'block';
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+        return (bytes / 1024 / 1024 / 1024).toFixed(1) + ' GB';
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}

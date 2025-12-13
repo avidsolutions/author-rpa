@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Desktop - RPA Framework{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Desktop Module</h2>
+    <p>Take screenshots and view screen information</p>
+</div>
+
+<div class="alert alert-info">
+    Note: Desktop automation features (mouse/keyboard control) are limited in a web context for security reasons. Screenshot and screen info are available.
+</div>
+
+<div class="grid grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Screen Information</h3>
+        </div>
+        <div id="screen-info">
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Screenshot</h3>
+        </div>
+        <button class="btn btn-primary" id="screenshot-btn" onclick="takeScreenshot()">Take Screenshot</button>
+        <div id="screenshot-container" style="margin-top: 20px; display: none;">
+            <img id="screenshot-img" style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Available Desktop Functions</h3>
+    </div>
+    <p style="margin-bottom: 15px; color: var(--text-light);">These functions are available via Python API:</p>
+    <div class="grid grid-3">
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">🖱️ Mouse Control</h4>
+            <code style="font-size: 0.85rem;">
+                bot.desktop.click(x, y)<br>
+                bot.desktop.move_to(x, y)<br>
+                bot.desktop.drag_to(x, y)
+            </code>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">⌨️ Keyboard</h4>
+            <code style="font-size: 0.85rem;">
+                bot.desktop.type_text("...")<br>
+                bot.desktop.press("enter")<br>
+                bot.desktop.hotkey("ctrl", "c")
+            </code>
+        </div>
+        <div style="padding: 15px; background: #f8fafc; border-radius: 8px;">
+            <h4 style="margin-bottom: 8px;">📷 Screen</h4>
+            <code style="font-size: 0.85rem;">
+                bot.desktop.screenshot("img.png")<br>
+                bot.desktop.get_screen_size()<br>
+                bot.desktop.locate_on_screen("btn.png")
+            </code>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load screen info
+    fetch('/api/desktop/screen-size')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('screen-info').innerHTML = `
+                    <table class="table">
+                        <tr><td><strong>Width</strong></td><td>${data.width}px</td></tr>
+                        <tr><td><strong>Height</strong></td><td>${data.height}px</td></tr>
+                        <tr><td><strong>Resolution</strong></td><td>${data.width} x ${data.height}</td></tr>
+                    </table>
+                `;
+            } else {
+                document.getElementById('screen-info').innerHTML = '<p style="color: var(--danger);">Could not get screen info</p>';
+            }
+        })
+        .catch(err => {
+            document.getElementById('screen-info').innerHTML = '<p style="color: var(--danger);">Error loading screen info</p>';
+        });
+
+    async function takeScreenshot() {
+        const btn = document.getElementById('screenshot-btn');
+        showLoading(btn);
+
+        try {
+            const response = await fetch('/api/desktop/screenshot', { method: 'POST' });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                document.getElementById('screenshot-img').src = url;
+                document.getElementById('screenshot-container').style.display = 'block';
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Could not take screenshot');
+            }
+        } catch (err) {
+            alert(err.message);
+        }
+
+        hideLoading(btn, 'Take Screenshot');
+    }
+</script>
+{% endblock %}
