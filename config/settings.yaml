@@ -1,0 +1,36 @@
+# RPA Framework Configuration
+
+# Email settings
+email:
+  smtp_server: smtp.gmail.com
+  smtp_port: 587
+  imap_server: imap.gmail.com
+  imap_port: 993
+  username: ${EMAIL_USER}
+  password: ${EMAIL_PASS}
+
+# Database settings
+database:
+  default: sqlite:///data/rpa.db
+
+# Web scraper settings
+scraper:
+  user_agent: "RPA Bot 1.0"
+  rate_limit: 1.0  # requests per second
+  timeout: 30
+
+# Logging settings
+logging:
+  level: INFO
+  file: logs/rpa.log
+
+# Desktop automation settings
+desktop:
+  failsafe: true
+  pause: 0.1
+
+# API defaults
+api:
+  timeout: 30
+  retry_count: 3
+  retry_delay: 1.0
