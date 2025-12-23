@@ -21,9 +21,9 @@ reportlab>=4.0.0
 openpyxl>=3.1.0
 pandas>=2.1.0
 
-# Desktop Automation
-pyautogui>=0.9.54
-pytesseract>=0.3.10
+# Desktop Automation (optional - requires display server)
+# pyautogui>=0.9.54
+# pytesseract>=0.3.10
 Pillow>=10.0.0
 
 # Database
@@ -36,3 +36,4 @@ watchdog>=3.0.0
 # Web UI
 flask>=3.0.0
 flask-cors>=4.0.0
+gunicorn>=21.0.0

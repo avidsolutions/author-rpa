@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing - AuthoR{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align: center; max-width: 800px; margin: 0 auto 40px;">
+    <h2>Simple, Transparent Pricing</h2>
+    <p>Choose the plan that fits your automation needs. All plans include access to our core RPA modules.</p>
+</div>
+
+<div style="text-align: center; margin-bottom: 30px;">
+    <div style="display: inline-flex; background: var(--bg); border-radius: 8px; padding: 4px;">
+        <button class="btn" id="monthly-btn" onclick="toggleBilling('monthly')" style="background: var(--primary); color: white;">Monthly</button>
+        <button class="btn" id="annual-btn" onclick="toggleBilling('annual')" style="background: transparent; color: var(--text);">Annual <span style="color: var(--success); font-size: 0.8rem;">Save 17%</span></button>
+    </div>
+</div>
+
+<div id="pricing-grid" class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1400px; margin: 0 auto;">
+    <!-- Plans will be loaded here -->
+</div>
+
+<div class="card" style="margin-top: 60px;">
+    <div class="card-header" style="text-align: center;">
+        <h3 class="card-title">Compare All Features</h3>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="table" id="features-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Free</th>
+                    <th>Starter</th>
+                    <th style="background: #dbeafe;">Professional</th>
+                    <th>Business</th>
+                    <th>Enterprise</th>
+                </tr>
+            </thead>
+            <tbody id="features-body">
+                <!-- Features will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 60px; text-align: center; padding: 40px; background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 16px; color: white;">
+    <h3 style="margin-bottom: 16px;">Available on Leading Cloud Marketplaces</h3>
+    <p style="margin-bottom: 24px; color: #94a3b8;">Deploy directly from Azure Marketplace or IBM Cloud Marketplace</p>
+    <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; background: #0078d4; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold;">Az</div>
+            <span>Azure Marketplace</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; background: #054ada; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold;">IBM</div>
+            <span>IBM Cloud Marketplace</span>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 40px;">
+    <div class="card-header">
+        <h3 class="card-title">Frequently Asked Questions</h3>
+    </div>
+    <div style="display: grid; gap: 20px;">
+        <div>
+            <h4 style="margin-bottom: 8px;">Can I upgrade or downgrade my plan?</h4>
+            <p style="color: var(--text-light);">Yes, you can change your plan at any time. When upgrading, you'll be prorated for the remainder of your billing period. When downgrading, the change takes effect at the start of your next billing cycle.</p>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 8px;">What happens if I exceed my limits?</h4>
+            <p style="color: var(--text-light);">We'll notify you when you're approaching your limits. You can upgrade your plan or wait until your limits reset at the start of your next billing period.</p>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 8px;">Do you offer custom enterprise pricing?</h4>
+            <p style="color: var(--text-light);">Yes! Our Enterprise plan is fully customizable. Contact our sales team for volume discounts, custom SLAs, and dedicated support options.</p>
+        </div>
+        <div>
+            <h4 style="margin-bottom: 8px;">Is there a free trial?</h4>
+            <p style="color: var(--text-light);">Our Free tier lets you try the platform with basic features. For Professional and Business tiers, we offer a 14-day free trial with full access.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let billingPeriod = 'monthly';
+    let plansData = [];
+
+    // Load pricing plans
+    fetch('/api/pricing/plans')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                plansData = data.plans;
+                renderPlans();
+                renderFeaturesTable();
+            }
+        });
+
+    function toggleBilling(period) {
+        billingPeriod = period;
+        document.getElementById('monthly-btn').style.background = period === 'monthly' ? 'var(--primary)' : 'transparent';
+        document.getElementById('monthly-btn').style.color = period === 'monthly' ? 'white' : 'var(--text)';
+        document.getElementById('annual-btn').style.background = period === 'annual' ? 'var(--primary)' : 'transparent';
+        document.getElementById('annual-btn').style.color = period === 'annual' ? 'white' : 'var(--text)';
+        renderPlans();
+    }
+
+    function renderPlans() {
+        const grid = document.getElementById('pricing-grid');
+        grid.innerHTML = plansData.map(plan => {
+            const price = billingPeriod === 'monthly' ? plan.monthly_price : plan.annual_monthly_equivalent;
+            const isPopular = plan.popular;
+            const isEnterprise = plan.tier === 'enterprise';
+
+            return `
+                <div class="card" style="position: relative; ${isPopular ? 'border: 2px solid var(--primary); transform: scale(1.02);' : ''}">
+                    ${isPopular ? '<div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 4px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">MOST POPULAR</div>' : ''}
+                    <div style="text-align: center; padding: 20px 0;">
+                        <h3 style="margin-bottom: 8px;">${plan.name}</h3>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;">${plan.description}</p>
+                        <div style="margin-bottom: 20px;">
+                            ${isEnterprise ?
+                                '<span style="font-size: 2.5rem; font-weight: 700;">Custom</span>' :
+                                `<span style="font-size: 2.5rem; font-weight: 700;">$${price}</span>
+                                <span style="color: var(--text-light);">/month</span>`
+                            }
+                            ${billingPeriod === 'annual' && !isEnterprise && price > 0 ? '<div style="font-size: 0.85rem; color: var(--success);">Billed annually at $' + plan.annual_price + '</div>' : ''}
+                        </div>
+                        <button class="btn ${isPopular ? 'btn-primary' : 'btn-secondary'}" style="width: 100%;" onclick="selectPlan('${plan.tier}')">
+                            ${plan.monthly_price === 0 ? 'Get Started Free' : isEnterprise ? 'Contact Sales' : 'Start Free Trial'}
+                        </button>
+                    </div>
+                    <hr style="border: none; border-top: 1px solid var(--border); margin: 20px 0;">
+                    <div style="padding: 0 10px;">
+                        <div style="font-weight: 600; margin-bottom: 12px;">Includes:</div>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: var(--success);">&#10003;</span>
+                                ${plan.limits.tasks_per_month === -1 ? 'Unlimited' : plan.limits.tasks_per_month.toLocaleString()} tasks/month
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: var(--success);">&#10003;</span>
+                                ${plan.limits.workflows_per_month === -1 ? 'Unlimited' : plan.limits.workflows_per_month} workflows/month
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: var(--success);">&#10003;</span>
+                                ${plan.features.modules.length} automation modules
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: var(--success);">&#10003;</span>
+                                ${plan.limits.max_file_size_mb}MB max file size
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: ${plan.features.scheduling ? 'var(--success)' : 'var(--text-light)'};">${plan.features.scheduling ? '&#10003;' : '&#10005;'}</span>
+                                Scheduled automation
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: ${plan.features.api_access ? 'var(--success)' : 'var(--text-light)'};">${plan.features.api_access ? '&#10003;' : '&#10005;'}</span>
+                                API access
+                            </li>
+                            <li style="padding: 8px 0; display: flex; align-items: center; gap: 8px;">
+                                <span style="color: var(--success);">&#10003;</span>
+                                ${capitalizeFirst(plan.limits.support_level)} support
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderFeaturesTable() {
+        const features = [
+            { name: 'Tasks per month', key: 'tasks_per_month', type: 'limit' },
+            { name: 'Workflows per month', key: 'workflows_per_month', type: 'limit' },
+            { name: 'API calls per day', key: 'api_calls_per_day', type: 'limit' },
+            { name: 'Max file size', key: 'max_file_size_mb', type: 'limit', suffix: 'MB' },
+            { name: 'Data retention', key: 'data_retention_days', type: 'limit', suffix: ' days' },
+            { name: 'Concurrent workflows', key: 'max_concurrent_workflows', type: 'limit' },
+            { name: 'Scheduling', key: 'scheduling', type: 'feature' },
+            { name: 'Webhooks', key: 'webhooks', type: 'feature' },
+            { name: 'API Access', key: 'api_access', type: 'feature' },
+            { name: 'Team Collaboration', key: 'team_collaboration', type: 'feature' },
+            { name: 'Priority Execution', key: 'priority_execution', type: 'feature' },
+            { name: 'SSO / SAML', key: 'sso_enabled', type: 'limit' },
+            { name: 'Audit Logs', key: 'audit_logs', type: 'limit' },
+            { name: 'Support Level', key: 'support_level', type: 'limit', capitalize: true },
+        ];
+
+        const tbody = document.getElementById('features-body');
+        tbody.innerHTML = features.map(feature => {
+            return `
+                <tr>
+                    <td><strong>${feature.name}</strong></td>
+                    ${plansData.map((plan, idx) => {
+                        let value;
+                        if (feature.type === 'limit') {
+                            value = plan.limits[feature.key];
+                        } else {
+                            value = plan.features[feature.key];
+                        }
+
+                        let display;
+                        if (typeof value === 'boolean') {
+                            display = value ? '<span style="color: var(--success);">&#10003;</span>' : '<span style="color: var(--text-light);">-</span>';
+                        } else if (value === -1) {
+                            display = '<strong>Unlimited</strong>';
+                        } else if (feature.capitalize) {
+                            display = capitalizeFirst(value);
+                        } else {
+                            display = value.toLocaleString() + (feature.suffix || '');
+                        }
+
+                        const bgStyle = plan.popular ? 'background: #dbeafe;' : '';
+                        return `<td style="${bgStyle}">${display}</td>`;
+                    }).join('')}
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function selectPlan(tier) {
+        if (tier === 'enterprise') {
+            alert('Contact sales@avidsoltuions.com for Enterprise pricing');
+            return;
+        }
+        // In production, this would redirect to checkout
+        alert(`Selected plan: ${tier}\n\nIn production, this would redirect to:\n- Azure Marketplace checkout\n- IBM Cloud Marketplace checkout\n- Or direct Stripe checkout`);
+    }
+
+    function capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+</script>
+{% endblock %}

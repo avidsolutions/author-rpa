@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 from datetime import datetime
 
 from watchdog.observers import Observer
@@ -322,7 +322,3 @@ class FileModule(LoggerMixin):
         Path(path).write_text(content, encoding=encoding)
         self.logger.info(f"Wrote {len(content)} characters to {path}")
         return path
-
-
-# Type hint fix
-from typing import Dict

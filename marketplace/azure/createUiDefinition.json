@@ -1,0 +1,167 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+    "handler": "Microsoft.Azure.CreateUIDef",
+    "version": "0.1.2-preview",
+    "parameters": {
+        "config": {
+            "isWizard": true,
+            "basics": {
+                "description": "# Autho.R\n\nEnterprise-grade Robotic Process Automation for Azure.\n\nAutomate documents, spreadsheets, PDFs, web scraping, APIs, and more.",
+                "subscription": {
+                    "constraints": {
+                        "validations": []
+                    }
+                },
+                "resourceGroup": {
+                    "constraints": {
+                        "validations": []
+                    }
+                },
+                "location": {
+                    "label": "Region",
+                    "toolTip": "Select the Azure region for your RPA deployment",
+                    "resourceTypes": ["Microsoft.Web/sites"]
+                }
+            }
+        },
+        "basics": [
+            {
+                "name": "appName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Application Name",
+                "defaultValue": "author",
+                "toolTip": "Name for your RPA Framework instance",
+                "constraints": {
+                    "required": true,
+                    "regex": "^[a-z0-9-]{3,24}$",
+                    "validationMessage": "Name must be 3-24 lowercase letters, numbers, or hyphens."
+                }
+            }
+        ],
+        "steps": [
+            {
+                "name": "pricingStep",
+                "label": "Pricing Tier",
+                "elements": [
+                    {
+                        "name": "pricingInfo",
+                        "type": "Microsoft.Common.InfoBox",
+                        "visible": true,
+                        "options": {
+                            "icon": "Info",
+                            "text": "Select a pricing tier based on your automation needs. You can upgrade or downgrade at any time."
+                        }
+                    },
+                    {
+                        "name": "pricingTier",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "Pricing Tier",
+                        "defaultValue": "Professional",
+                        "toolTip": "Choose your subscription tier",
+                        "constraints": {
+                            "allowedValues": [
+                                {
+                                    "label": "Free - $0/month (100 tasks, basic modules)",
+                                    "value": "author-free"
+                                },
+                                {
+                                    "label": "Starter - $29/month (1,000 tasks, standard modules)",
+                                    "value": "author-starter"
+                                },
+                                {
+                                    "label": "Professional - $79/month (10,000 tasks, all modules) - RECOMMENDED",
+                                    "value": "author-professional"
+                                },
+                                {
+                                    "label": "Business - $199/month (50,000 tasks, SSO, audit logs)",
+                                    "value": "author-business"
+                                },
+                                {
+                                    "label": "Enterprise - $499/month (unlimited, SLA, white-label)",
+                                    "value": "author-enterprise"
+                                }
+                            ],
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "billingPeriod",
+                        "type": "Microsoft.Common.OptionsGroup",
+                        "label": "Billing Period",
+                        "defaultValue": "Monthly",
+                        "toolTip": "Annual billing saves 17%",
+                        "constraints": {
+                            "allowedValues": [
+                                {
+                                    "label": "Monthly",
+                                    "value": "monthly"
+                                },
+                                {
+                                    "label": "Annual (Save 17%)",
+                                    "value": "annual"
+                                }
+                            ],
+                            "required": true
+                        }
+                    }
+                ]
+            },
+            {
+                "name": "configStep",
+                "label": "Configuration",
+                "elements": [
+                    {
+                        "name": "appServicePlan",
+                        "type": "Microsoft.Common.DropDown",
+                        "label": "App Service Plan Size",
+                        "defaultValue": "B1 Basic",
+                        "toolTip": "Compute resources for your RPA instance",
+                        "constraints": {
+                            "allowedValues": [
+                                {
+                                    "label": "B1 Basic (1 core, 1.75 GB RAM)",
+                                    "value": "B1"
+                                },
+                                {
+                                    "label": "B2 Basic (2 cores, 3.5 GB RAM)",
+                                    "value": "B2"
+                                },
+                                {
+                                    "label": "S1 Standard (1 core, 1.75 GB RAM, autoscale)",
+                                    "value": "S1"
+                                },
+                                {
+                                    "label": "S2 Standard (2 cores, 3.5 GB RAM, autoscale)",
+                                    "value": "S2"
+                                },
+                                {
+                                    "label": "P1v2 Premium (1 core, 3.5 GB RAM)",
+                                    "value": "P1v2"
+                                },
+                                {
+                                    "label": "P2v2 Premium (2 cores, 7 GB RAM)",
+                                    "value": "P2v2"
+                                }
+                            ],
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "enableLogging",
+                        "type": "Microsoft.Common.CheckBox",
+                        "label": "Enable Application Logging",
+                        "toolTip": "Enable detailed logging for troubleshooting"
+                    }
+                ]
+            }
+        ],
+        "outputs": {
+            "appName": "[basics('appName')]",
+            "location": "[location()]",
+            "pricingTier": "[steps('pricingStep').pricingTier]",
+            "billingPeriod": "[steps('pricingStep').billingPeriod]",
+            "appServicePlanSize": "[steps('configStep').appServicePlan]",
+            "enableLogging": "[steps('configStep').enableLogging]"
+        }
+    }
+}

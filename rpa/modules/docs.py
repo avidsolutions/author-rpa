@@ -368,3 +368,114 @@ class DocsModule(LoggerMixin):
                 text_parts.append(" | ".join(row_text))
 
         return "\n".join(text_parts)
+
+    def fill_form(
+        self,
+        doc_path: str,
+        output_path: str,
+        field_mappings: List[Dict[str, Any]],
+    ) -> str:
+        """Fill form fields in a Word document by table cell positions.
+
+        Args:
+            doc_path: Path to source Word document
+            output_path: Path to save filled document
+            field_mappings: List of dicts with keys:
+                - table: Table index (0-based)
+                - row: Row index (0-based)
+                - col: Column index (0-based)
+                - value: Value to insert
+
+        Returns:
+            Path to filled document
+        """
+        doc = Document(doc_path)
+
+        # Remove any document protection
+        self._remove_protection(doc)
+
+        for mapping in field_mappings:
+            table_idx = mapping.get("table", 0)
+            row_idx = mapping.get("row")
+            col_idx = mapping.get("col")
+            value = mapping.get("value", "")
+
+            if row_idx is None or col_idx is None:
+                continue
+
+            try:
+                table = doc.tables[table_idx]
+                cell = table.rows[row_idx].cells[col_idx]
+
+                # Clear existing content and add new editable text
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.text = ""
+
+                # Add value as a new run to ensure it's editable
+                if cell.paragraphs:
+                    if cell.paragraphs[0].runs:
+                        cell.paragraphs[0].runs[0].text = str(value)
+                    else:
+                        cell.paragraphs[0].add_run(str(value))
+                else:
+                    cell.text = str(value)
+
+                self.logger.debug(f"Filled T{table_idx}[{row_idx},{col_idx}] = {value}")
+            except (IndexError, AttributeError) as e:
+                self.logger.warning(f"Could not fill T{table_idx}[{row_idx},{col_idx}]: {e}")
+
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        doc.save(output_path)
+        self.logger.info(f"Filled form and saved to: {output_path}")
+        return output_path
+
+    def _remove_protection(self, doc: Document) -> None:
+        """Remove document protection to make it fully editable."""
+        from docx.oxml.ns import qn
+
+        # Access the document's XML
+        doc_elm = doc.part.element
+
+        # Find and remove documentProtection from settings
+        for settings in doc_elm.iter(qn('w:settings')):
+            for protection in settings.findall(qn('w:documentProtection')):
+                settings.remove(protection)
+
+        # Also check document root for protection
+        for protection in doc_elm.iter(qn('w:documentProtection')):
+            protection.getparent().remove(protection)
+
+    def get_form_structure(self, doc_path: str) -> List[Dict[str, Any]]:
+        """Get the structure of tables in a Word document for form filling.
+
+        Args:
+            doc_path: Path to Word document
+
+        Returns:
+            List of table structures with cell positions and content
+        """
+        doc = Document(doc_path)
+        structure = []
+
+        for t_idx, table in enumerate(doc.tables):
+            table_info = {
+                "table_index": t_idx,
+                "rows": len(table.rows),
+                "cols": len(table.columns),
+                "cells": []
+            }
+
+            for r_idx, row in enumerate(table.rows):
+                for c_idx, cell in enumerate(row.cells):
+                    cell_info = {
+                        "row": r_idx,
+                        "col": c_idx,
+                        "text": cell.text.strip()[:100],
+                        "is_empty": not cell.text.strip()
+                    }
+                    table_info["cells"].append(cell_info)
+
+            structure.append(table_info)
+
+        return structure

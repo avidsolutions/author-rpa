@@ -1,0 +1,238 @@
+{
+    "$schema": "https://cloud.ibm.com/api/schematics/v1/offering-schema.json",
+    "name": "author-framework",
+    "label": "Autho.R",
+    "version": "1.0.0",
+    "offering_type": "software",
+    "provider_name": "Avid Solutions International",
+    "provider_id": "avidsolutions",
+    "short_description": "Enterprise-grade Robotic Process Automation",
+    "long_description": "A comprehensive Python-based RPA framework that automates documents, spreadsheets, PDFs, web scraping, APIs, databases, and desktop tasks. Deploy on IBM Cloud and scale your automation workflows.",
+    "features": [
+        {
+            "title": "Document Automation",
+            "description": "Create Word documents, PDFs, Markdown, and HTML reports"
+        },
+        {
+            "title": "Data Processing",
+            "description": "Process Excel, CSV files with pandas integration"
+        },
+        {
+            "title": "Web Scraping",
+            "description": "Extract data from websites with BeautifulSoup and Selenium"
+        },
+        {
+            "title": "API Integration",
+            "description": "Connect to REST APIs with retry logic and authentication"
+        },
+        {
+            "title": "Database Operations",
+            "description": "SQLite, PostgreSQL, MySQL support via SQLAlchemy"
+        },
+        {
+            "title": "Workflow Orchestration",
+            "description": "Chain automation steps with error handling"
+        }
+    ],
+    "media": [
+        {
+            "type": "image",
+            "url": "https://github.com/avidsolutions/author/raw/main/docs/screenshots/dashboard.png",
+            "caption": "RPA Framework Dashboard"
+        }
+    ],
+    "keywords": [
+        "rpa",
+        "automation",
+        "python",
+        "document-processing",
+        "web-scraping",
+        "api-integration",
+        "workflow"
+    ],
+    "catalog_id": "ibm-cloud-catalog",
+    "hidden": false,
+    "public": true,
+    "tags": [
+        "automation",
+        "developer_tools",
+        "integration"
+    ],
+    "support": {
+        "url": "https://github.com/avidsolutions/author/issues",
+        "process": "Submit issues via GitHub",
+        "locations": ["US", "EU"]
+    },
+    "plans": [
+        {
+            "id": "author-free",
+            "label": "Free",
+            "description": "Get started with basic automation - 100 tasks/month",
+            "free": true,
+            "pricing": {
+                "type": "free",
+                "url": "https://author-app.azurewebsites.net/pricing"
+            },
+            "features": [
+                "100 tasks per month",
+                "4 basic modules (Spreadsheet, Files, PDF, Docs)",
+                "7-day data retention",
+                "Community support"
+            ]
+        },
+        {
+            "id": "author-starter",
+            "label": "Starter",
+            "description": "For individuals and small projects - $29/month",
+            "free": false,
+            "pricing": {
+                "type": "paid",
+                "url": "https://author-app.azurewebsites.net/pricing",
+                "metrics": [
+                    {
+                        "part_ref": "starter-monthly",
+                        "metric_id": "INSTANCES",
+                        "charge_unit": "MONTHLY",
+                        "charge_unit_display_name": "Instance",
+                        "charge_unit_quantity": 1,
+                        "usage_cap_quantity": 1,
+                        "amounts": [
+                            {
+                                "country": "USA",
+                                "currency": "USD",
+                                "prices": [{"quantity_tier": 1, "price": 29.00}]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "features": [
+                "1,000 tasks per month",
+                "7 modules (+ Scraper, API, Database)",
+                "30-day data retention",
+                "Email support",
+                "Scheduled automation",
+                "API access"
+            ]
+        },
+        {
+            "id": "author-professional",
+            "label": "Professional",
+            "description": "For growing teams - $79/month (RECOMMENDED)",
+            "free": false,
+            "recommended": true,
+            "pricing": {
+                "type": "paid",
+                "url": "https://author-app.azurewebsites.net/pricing",
+                "metrics": [
+                    {
+                        "part_ref": "professional-monthly",
+                        "metric_id": "INSTANCES",
+                        "charge_unit": "MONTHLY",
+                        "charge_unit_display_name": "Instance",
+                        "charge_unit_quantity": 1,
+                        "usage_cap_quantity": 1,
+                        "amounts": [
+                            {
+                                "country": "USA",
+                                "currency": "USD",
+                                "prices": [{"quantity_tier": 1, "price": 79.00}]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "features": [
+                "10,000 tasks per month",
+                "All 10 modules",
+                "90-day data retention",
+                "Priority support",
+                "Webhooks",
+                "Team collaboration",
+                "Audit logs"
+            ]
+        },
+        {
+            "id": "author-business",
+            "label": "Business",
+            "description": "For organizations - $199/month",
+            "free": false,
+            "pricing": {
+                "type": "paid",
+                "url": "https://author-app.azurewebsites.net/pricing",
+                "metrics": [
+                    {
+                        "part_ref": "business-monthly",
+                        "metric_id": "INSTANCES",
+                        "charge_unit": "MONTHLY",
+                        "charge_unit_display_name": "Instance",
+                        "charge_unit_quantity": 1,
+                        "usage_cap_quantity": 1,
+                        "amounts": [
+                            {
+                                "country": "USA",
+                                "currency": "USD",
+                                "prices": [{"quantity_tier": 1, "price": 199.00}]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "features": [
+                "50,000 tasks per month",
+                "All modules + custom integrations",
+                "365-day data retention",
+                "Dedicated support",
+                "SSO / SAML",
+                "Audit logs",
+                "Priority execution"
+            ]
+        },
+        {
+            "id": "author-enterprise",
+            "label": "Enterprise",
+            "description": "Custom solutions - Starting at $499/month",
+            "free": false,
+            "pricing": {
+                "type": "paid",
+                "url": "https://author-app.azurewebsites.net/pricing",
+                "metrics": [
+                    {
+                        "part_ref": "enterprise-monthly",
+                        "metric_id": "INSTANCES",
+                        "charge_unit": "MONTHLY",
+                        "charge_unit_display_name": "Instance",
+                        "charge_unit_quantity": 1,
+                        "usage_cap_quantity": 1,
+                        "amounts": [
+                            {
+                                "country": "USA",
+                                "currency": "USD",
+                                "prices": [{"quantity_tier": 1, "price": 499.00}]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "features": [
+                "Unlimited tasks",
+                "All modules + white-label",
+                "Unlimited data retention",
+                "Dedicated support + SLA",
+                "Custom development",
+                "On-premise deployment option"
+            ]
+        }
+    ],
+    "deployment": {
+        "type": "cloud_foundry",
+        "target": {
+            "type": "application",
+            "runtime": "python"
+        },
+        "scripts": {
+            "install": "pip install -r requirements.txt",
+            "start": "gunicorn --bind 0.0.0.0:$PORT application:app"
+        }
+    }
+}

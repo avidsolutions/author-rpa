@@ -4,23 +4,36 @@ import time
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
-import pyautogui
-from PIL import Image
-
 from ..core.logger import LoggerMixin
 
-
-# Configure pyautogui
-pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.1
+# Try to import pyautogui - it may not be available on servers without displays
+try:
+    import pyautogui
+    from PIL import Image
+    PYAUTOGUI_AVAILABLE = True
+    # Configure pyautogui
+    pyautogui.FAILSAFE = True
+    pyautogui.PAUSE = 0.1
+except Exception:
+    PYAUTOGUI_AVAILABLE = False
+    pyautogui = None
+    Image = None
 
 
 class DesktopModule(LoggerMixin):
     """Handle desktop GUI automation."""
 
     def __init__(self, failsafe: bool = True, pause: float = 0.1):
-        pyautogui.FAILSAFE = failsafe
-        pyautogui.PAUSE = pause
+        self._available = PYAUTOGUI_AVAILABLE
+        if self._available:
+            pyautogui.FAILSAFE = failsafe
+            pyautogui.PAUSE = pause
+
+    def _check_available(self):
+        """Check if pyautogui is available."""
+        if not self._available:
+            raise RuntimeError("Desktop automation not available (no display server)")
+        return True
 
     # Mouse operations
 
@@ -149,7 +162,7 @@ class DesktopModule(LoggerMixin):
         self,
         output_path: Optional[str] = None,
         region: Optional[Tuple[int, int, int, int]] = None,
-    ) -> Union[str, Image.Image]:
+    ) -> Union[str, "Image.Image"]:
         """Take a screenshot.
 
         Args:
@@ -159,6 +172,7 @@ class DesktopModule(LoggerMixin):
         Returns:
             Path if saved, Image object otherwise
         """
+        self._check_available()
         img = pyautogui.screenshot(region=region)
 
         if output_path:
@@ -171,6 +185,7 @@ class DesktopModule(LoggerMixin):
 
     def get_screen_size(self) -> Tuple[int, int]:
         """Get screen dimensions."""
+        self._check_available()
         return pyautogui.size()
 
     def locate_on_screen(

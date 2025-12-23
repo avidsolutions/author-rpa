@@ -1,0 +1,16 @@
+---
+applications:
+  - name: author
+    memory: 512M
+    instances: 1
+    buildpacks:
+      - python_buildpack
+    command: gunicorn --bind 0.0.0.0:$PORT --timeout 120 application:app
+    env:
+      PYTHON_VERSION: 3.11
+      RPA_PRICING_TIER: author-professional
+    services: []
+    routes:
+      - route: author.mybluemix.net
+    health-check-type: http
+    health-check-http-endpoint: /health

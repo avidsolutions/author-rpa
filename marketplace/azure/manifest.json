@@ -1,0 +1,130 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Azure/azure-marketplace/master/schemas/offer/solution-template-1.0.0.json",
+    "id": "author-framework",
+    "version": "1.0.0",
+    "publisherId": "avidsolutions",
+    "offerId": "author",
+    "displayName": "Autho.R",
+    "publisherDisplayName": "Avid Solutions International",
+    "summary": "Enterprise-grade Robotic Process Automation for Azure",
+    "longSummary": "Automate documents, spreadsheets, PDFs, web scraping, APIs, databases, and desktop tasks with a unified Python-based RPA framework.",
+    "description": "## Autho.R\n\nA comprehensive Robotic Process Automation solution that helps businesses automate repetitive tasks and workflows.\n\n### Key Features\n\n- **Document Automation**: Create Word documents, PDFs, and Markdown files\n- **Spreadsheet Processing**: Read, write, and transform Excel/CSV files\n- **Web Scraping**: Extract data from websites with ease\n- **API Integration**: Connect to REST APIs with built-in retry logic\n- **Database Operations**: SQLite, PostgreSQL, MySQL support\n- **Desktop Automation**: Mouse, keyboard, and screen capture\n- **Workflow Orchestration**: Chain multiple automation steps\n\n### Pricing Tiers\n\n| Tier | Price | Tasks/Month | Modules |\n|------|-------|-------------|----------|\n| Free | $0 | 100 | 4 |\n| Starter | $29 | 1,000 | 7 |\n| Professional | $79 | 10,000 | 10 |\n| Business | $199 | 50,000 | 10+ SSO |\n| Enterprise | $499 | Unlimited | All + SLA |",
+    "eula": "https://github.com/avidsolutions/author/blob/main/LICENSE",
+    "privacyUrl": "https://avidsolutions.com/privacy",
+    "supportUrl": "https://github.com/avidsolutions/author/issues",
+    "documentationUrl": "https://github.com/avidsolutions/author#readme",
+    "categories": [
+        "automation",
+        "developer-tools",
+        "integration"
+    ],
+    "industries": [
+        "finance",
+        "healthcare",
+        "manufacturing",
+        "retail"
+    ],
+    "leadGeneration": {
+        "productId": "author"
+    },
+    "plans": [
+        {
+            "planId": "author-free",
+            "displayName": "Free",
+            "summary": "Get started with basic automation",
+            "description": "100 tasks per month, 4 basic modules, community support",
+            "price": {
+                "currencyCode": "USD",
+                "amount": 0.00,
+                "billingTerm": "month"
+            }
+        },
+        {
+            "planId": "author-starter",
+            "displayName": "Starter",
+            "summary": "For individuals and small projects",
+            "description": "1,000 tasks per month, 7 modules, email support, scheduling",
+            "price": {
+                "currencyCode": "USD",
+                "amount": 29.00,
+                "billingTerm": "month"
+            },
+            "annualPrice": {
+                "currencyCode": "USD",
+                "amount": 290.00,
+                "billingTerm": "year"
+            }
+        },
+        {
+            "planId": "author-professional",
+            "displayName": "Professional",
+            "summary": "For growing teams and businesses",
+            "description": "10,000 tasks per month, all 10 modules, priority support, webhooks, team collaboration",
+            "isRecommended": true,
+            "price": {
+                "currencyCode": "USD",
+                "amount": 79.00,
+                "billingTerm": "month"
+            },
+            "annualPrice": {
+                "currencyCode": "USD",
+                "amount": 790.00,
+                "billingTerm": "year"
+            }
+        },
+        {
+            "planId": "author-business",
+            "displayName": "Business",
+            "summary": "For organizations with advanced needs",
+            "description": "50,000 tasks per month, SSO/SAML, audit logs, dedicated support, custom integrations",
+            "price": {
+                "currencyCode": "USD",
+                "amount": 199.00,
+                "billingTerm": "month"
+            },
+            "annualPrice": {
+                "currencyCode": "USD",
+                "amount": 1990.00,
+                "billingTerm": "year"
+            }
+        },
+        {
+            "planId": "author-enterprise",
+            "displayName": "Enterprise",
+            "summary": "Custom solutions for large organizations",
+            "description": "Unlimited tasks, SLA guarantee, white-label options, dedicated support, custom development",
+            "price": {
+                "currencyCode": "USD",
+                "amount": 499.00,
+                "billingTerm": "month"
+            },
+            "annualPrice": {
+                "currencyCode": "USD",
+                "amount": 4990.00,
+                "billingTerm": "year"
+            },
+            "contactSales": true
+        }
+    ],
+    "screenshots": [
+        {
+            "caption": "Dashboard",
+            "url": "https://github.com/avidsolutions/author/raw/main/docs/screenshots/dashboard.png"
+        },
+        {
+            "caption": "Pricing",
+            "url": "https://github.com/avidsolutions/author/raw/main/docs/screenshots/pricing.png"
+        }
+    ],
+    "videos": [],
+    "artifacts": [
+        {
+            "name": "mainTemplate.json",
+            "type": "armTemplate"
+        },
+        {
+            "name": "createUiDefinition.json",
+            "type": "uiDefinition"
+        }
+    ]
+}

@@ -1,0 +1,166 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the RPA Framework web app"
+            }
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources"
+            }
+        },
+        "pricingTier": {
+            "type": "string",
+            "defaultValue": "author-professional",
+            "allowedValues": [
+                "author-free",
+                "author-starter",
+                "author-professional",
+                "author-business",
+                "author-enterprise"
+            ],
+            "metadata": {
+                "description": "RPA Framework pricing tier"
+            }
+        },
+        "billingPeriod": {
+            "type": "string",
+            "defaultValue": "monthly",
+            "allowedValues": ["monthly", "annual"],
+            "metadata": {
+                "description": "Billing period for subscription"
+            }
+        },
+        "appServicePlanSize": {
+            "type": "string",
+            "defaultValue": "B1",
+            "allowedValues": ["B1", "B2", "S1", "S2", "P1v2", "P2v2"],
+            "metadata": {
+                "description": "App Service Plan SKU"
+            }
+        },
+        "enableLogging": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "Enable application logging"
+            }
+        }
+    },
+    "variables": {
+        "appServicePlanName": "[concat(parameters('appName'), '-plan')]",
+        "webAppName": "[parameters('appName')]",
+        "repoUrl": "https://github.com/avidsolutions/author.git"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('appServicePlanName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[parameters('appServicePlanSize')]"
+            },
+            "kind": "linux",
+            "properties": {
+                "reserved": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('webAppName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+            ],
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "siteConfig": {
+                    "linuxFxVersion": "PYTHON|3.11",
+                    "appCommandLine": "gunicorn --bind 0.0.0.0:8000 --timeout 120 application:app",
+                    "appSettings": [
+                        {
+                            "name": "RPA_PRICING_TIER",
+                            "value": "[parameters('pricingTier')]"
+                        },
+                        {
+                            "name": "RPA_BILLING_PERIOD",
+                            "value": "[parameters('billingPeriod')]"
+                        },
+                        {
+                            "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                            "value": "true"
+                        },
+                        {
+                            "name": "WEBSITE_RUN_FROM_PACKAGE",
+                            "value": "0"
+                        }
+                    ]
+                },
+                "httpsOnly": true
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/sourcecontrols",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(variables('webAppName'), '/web')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+            ],
+            "properties": {
+                "repoUrl": "[variables('repoUrl')]",
+                "branch": "main",
+                "isManualIntegration": true
+            }
+        },
+        {
+            "condition": "[parameters('enableLogging')]",
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2022-09-01",
+            "name": "[concat(variables('webAppName'), '/logs')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('webAppName'))]"
+            ],
+            "properties": {
+                "applicationLogs": {
+                    "fileSystem": {
+                        "level": "Information"
+                    }
+                },
+                "httpLogs": {
+                    "fileSystem": {
+                        "retentionInMb": 35,
+                        "enabled": true
+                    }
+                },
+                "detailedErrorMessages": {
+                    "enabled": true
+                },
+                "failedRequestsTracing": {
+                    "enabled": true
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "webAppUrl": {
+            "type": "string",
+            "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('webAppName'))).defaultHostName)]"
+        },
+        "pricingTier": {
+            "type": "string",
+            "value": "[parameters('pricingTier')]"
+        },
+        "billingPeriod": {
+            "type": "string",
+            "value": "[parameters('billingPeriod')]"
+        }
+    }
+}
