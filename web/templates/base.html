@@ -473,7 +473,151 @@
     </main>
 
     <script>
-        // Helper functions
+        // ============================================================
+        // Source Code Protection - OnticWorks.io Proprietary
+        // ============================================================
+        (function() {
+            'use strict';
+
+            // Disable right-click context menu
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable keyboard shortcuts for developer tools and view source
+            document.addEventListener('keydown', function(e) {
+                // F12 - Developer tools
+                if (e.key === 'F12' || e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+I - Developer tools
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+J - Console
+                if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+C - Inspect element
+                if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+U - View source
+                if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+S - Save page
+                if (e.ctrlKey && (e.key === 'S' || e.key === 's' || e.keyCode === 83)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Ctrl+Shift+K - Firefox console
+                if (e.ctrlKey && e.shiftKey && (e.key === 'K' || e.key === 'k' || e.keyCode === 75)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Cmd+Option+I - Mac Developer tools
+                if (e.metaKey && e.altKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Cmd+Option+U - Mac View source
+                if (e.metaKey && e.altKey && (e.key === 'U' || e.key === 'u' || e.keyCode === 85)) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Cmd+Option+J - Mac Console
+                if (e.metaKey && e.altKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // Disable text selection
+            document.addEventListener('selectstart', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // Disable drag operations
+            document.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+
+            // Disable copy (except in input fields)
+            document.addEventListener('copy', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // Detect and respond to developer tools opening
+            var devToolsOpen = false;
+            var threshold = 160;
+
+            function detectDevTools() {
+                var widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                var heightThreshold = window.outerHeight - window.innerHeight > threshold;
+
+                if (widthThreshold || heightThreshold) {
+                    if (!devToolsOpen) {
+                        devToolsOpen = true;
+                        console.clear();
+                        console.log('%c⚠️ Warning', 'color: red; font-size: 40px; font-weight: bold;');
+                        console.log('%cThis is a proprietary application. Unauthorized access, copying, or reverse engineering is prohibited.', 'font-size: 16px;');
+                        console.log('%c© OnticWorks.io - All Rights Reserved', 'font-size: 14px; color: gray;');
+                    }
+                } else {
+                    devToolsOpen = false;
+                }
+            }
+
+            setInterval(detectDevTools, 1000);
+
+            // Clear console periodically
+            setInterval(function() {
+                console.clear();
+            }, 5000);
+
+            // Disable print
+            window.addEventListener('beforeprint', function(e) {
+                e.preventDefault();
+                alert('Printing is disabled for security reasons.');
+                return false;
+            });
+
+            // Add CSS to prevent selection
+            var style = document.createElement('style');
+            style.textContent = `
+                body {
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
+                    user-select: none;
+                }
+                input, textarea {
+                    -webkit-user-select: text;
+                    -moz-user-select: text;
+                    -ms-user-select: text;
+                    user-select: text;
+                }
+            `;
+            document.head.appendChild(style);
+        })();
+
+        // ============================================================
+        // Application Helper Functions
+        // ============================================================
         function showLoading(btn) {
             btn.disabled = true;
             btn.innerHTML = '<div class="spinner"></div> Loading...';

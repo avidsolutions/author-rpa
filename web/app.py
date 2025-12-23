@@ -21,6 +21,81 @@ from rpa.core.pricing import PricingManager, PricingTier, get_pricing_table
 app = Flask(__name__)
 CORS(app)
 
+
+# ============================================================
+# Security Headers
+# ============================================================
+
+@app.before_request
+def block_suspicious_requests():
+    """Block requests that attempt to access source code or sensitive files."""
+    blocked_patterns = [
+        '.py', '.pyc', '.pyo',  # Python source files
+        '.git', '.env',  # Git and environment files
+        '__pycache__',  # Python cache
+        '.yaml', '.yml',  # Config files
+        'requirements.txt',  # Dependencies
+    ]
+
+    path = request.path.lower()
+    for pattern in blocked_patterns:
+        if pattern in path:
+            return jsonify({"error": "Access denied"}), 403
+
+    # Block requests with suspicious user agents (automated scraping tools)
+    user_agent = request.headers.get('User-Agent', '').lower()
+    blocked_agents = ['curl', 'wget', 'python-requests', 'scrapy', 'httpclient']
+    for agent in blocked_agents:
+        if agent in user_agent:
+            # Allow API endpoints but block HTML pages
+            if not request.path.startswith('/api/'):
+                return jsonify({"error": "Access denied"}), 403
+
+    return None
+
+
+@app.after_request
+def add_security_headers(response):
+    """Add security headers to all responses."""
+    # Content Security Policy - restrict resource loading
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+
+    # Prevent clickjacking
+    response.headers['X-Frame-Options'] = 'DENY'
+
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+
+    # Enable XSS protection
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+
+    # Referrer policy - don't leak referrer info
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+    # Permissions policy - restrict browser features
+    response.headers['Permissions-Policy'] = (
+        'geolocation=(), microphone=(), camera=(), '
+        'payment=(), usb=(), magnetometer=(), gyroscope=()'
+    )
+
+    # Cache control for sensitive pages
+    if 'text/html' in response.content_type:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+
+    return response
+
 # Initialize RPA
 bot = RPA()
 
