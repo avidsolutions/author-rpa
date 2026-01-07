@@ -16,7 +16,7 @@ from flask_cors import CORS
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rpa import RPA
-from rpa.core.pricing import PricingManager, PricingTier, get_pricing_table
+# Pricing module removed - now licensed as embedded solution
 
 app = Flask(__name__)
 CORS(app)
@@ -515,48 +515,6 @@ def desktop_screen_size():
     try:
         size = bot.desktop.get_screen_size()
         return jsonify({"success": True, "width": size[0], "height": size[1]})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-# ============================================================
-# Pricing Module
-# ============================================================
-
-@app.route("/pricing")
-def pricing_page():
-    return render_template("pricing.html")
-
-
-@app.route("/api/pricing/plans", methods=["GET"])
-def get_plans():
-    """Get all available pricing plans."""
-    try:
-        plans = get_pricing_table()
-        return jsonify({"success": True, "plans": plans})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/pricing/plan/<tier>", methods=["GET"])
-def get_plan(tier):
-    """Get a specific pricing plan."""
-    try:
-        tier_enum = PricingTier(tier)
-        plan = PricingManager.get_plan(tier_enum)
-        return jsonify({
-            "success": True,
-            "plan": {
-                "tier": plan.tier.value,
-                "name": plan.name,
-                "description": plan.description,
-                "monthly_price": plan.monthly_price_usd,
-                "annual_price": plan.annual_price_usd,
-                "marketplace_sku": plan.marketplace_sku,
-            }
-        })
-    except ValueError:
-        return jsonify({"error": f"Invalid tier: {tier}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

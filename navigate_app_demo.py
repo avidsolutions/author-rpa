@@ -98,7 +98,6 @@ class AppNavigator(LoggerMixin):
         {"name": "Files", "path": "/files", "description": "File management"},
         {"name": "Desktop", "path": "/desktop", "description": "Desktop automation"},
         {"name": "Workflow", "path": "/workflow", "description": "Multi-step automations"},
-        {"name": "Pricing", "path": "/pricing", "description": "Pricing plans"},
     ]
 
     def __init__(
